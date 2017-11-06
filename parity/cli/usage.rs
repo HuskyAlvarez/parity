@@ -559,12 +559,14 @@ macro_rules! usage {
 								SubCommand::with_name(&underscore_to_hyphen!(&stringify!($subc)[4..]))
 								.about($subc_help)
 								.args(&subc_usages.get(stringify!($subc)).unwrap().iter().map(|u| Arg::from_usage(u).use_delimiter(false).allow_hyphen_values(true)).collect::<Vec<Arg>>())
+								.args(&usages.iter().map(|u| Arg::from_usage(u).use_delimiter(false).allow_hyphen_values(true)).collect::<Vec<Arg>>()) // accept global arguments at this position
 								$(
 									.setting(AppSettings::SubcommandRequired) // prevent from running `parity account`
 									.subcommand(
 										SubCommand::with_name(&underscore_to_hyphen!(&stringify!($subc_subc)[stringify!($subc).len()+1..]))
 										.about($subc_subc_help)
 										.args(&subc_usages.get(stringify!($subc_subc)).unwrap().iter().map(|u| Arg::from_usage(u).use_delimiter(false).allow_hyphen_values(true)).collect::<Vec<Arg>>())
+										.args(&usages.iter().map(|u| Arg::from_usage(u).use_delimiter(false).allow_hyphen_values(true)).collect::<Vec<Arg>>()) // accept global arguments at this position
 									)
 								)*
 							)
@@ -573,10 +575,11 @@ macro_rules! usage {
 
 				let mut raw_args : RawArgs = Default::default();
 				$(
+					// use hydrate_flags! instead?
 					$(
 						raw_args.$flag = matches.is_present(stringify!($flag));
 					)*
-					$(
+					$( // 1
 						raw_args.$arg = return_if_parse_error!(if_option!(
 							$($arg_type_tt)+,
 							THEN {
@@ -626,6 +629,26 @@ macro_rules! usage {
 										}
 							));
 						)*
+						// Global arguments
+						$( // 2
+							raw_args.$arg = return_if_parse_error!(if_option!(
+								$($arg_type_tt)+,
+								THEN {
+									if_option_vec!(
+										$($arg_type_tt)+,
+										THEN { values_t!(submatches, stringify!($arg), inner_option_vec_type!($($arg_type_tt)+)) }
+										ELSE { value_t!(submatches, stringify!($arg), inner_option_type!($($arg_type_tt)+)) }
+									)
+								}
+								ELSE {
+									if_vec!(
+										$($arg_type_tt)+,
+										THEN { values_t!(submatches, stringify!($arg), inner_vec_type!($($arg_type_tt)+)) }
+										ELSE { value_t!(submatches, stringify!($arg), $($arg_type_tt)+) }
+									)
+								}
+							));
+						)*
 
 						// Sub-subcommands
 						$(
@@ -656,6 +679,27 @@ macro_rules! usage {
 										}
 									));
 								)*
+								// Global arguments
+								$( // 3
+									raw_args.$arg = return_if_parse_error!(if_option!(
+										$($arg_type_tt)+,
+										THEN {
+											if_option_vec!(
+												$($arg_type_tt)+,
+												THEN { values_t!(subsubmatches, stringify!($arg), inner_option_vec_type!($($arg_type_tt)+)) }
+												ELSE { value_t!(subsubmatches, stringify!($arg), inner_option_type!($($arg_type_tt)+)) }
+											)
+										}
+										ELSE {
+											if_vec!(
+												$($arg_type_tt)+,
+												THEN { values_t!(subsubmatches, stringify!($arg), inner_vec_type!($($arg_type_tt)+)) }
+												ELSE { value_t!(subsubmatches, stringify!($arg), $($arg_type_tt)+) }
+											)
+										}
+									));
+								)*
+
 							}
 							else {
 								raw_args.$subc_subc = false;

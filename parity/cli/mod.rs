@@ -1203,6 +1203,14 @@ mod tests {
 	use toml;
 	use clap::{ErrorKind as ClapErrorKind};
 
+	#[test]
+	fn should_accept_any_argument_order() {
+		let args = Args::parse(&["parity", "--chain=dev", "account", "list"]);
+		assert!(args.is_ok());
+
+		let args = Args::parse(&["parity", "account", "list", "--chain=dev"]);
+		assert!(args.is_ok());
+	}
 
 	#[test]
 	fn should_reject_invalid_values() {
