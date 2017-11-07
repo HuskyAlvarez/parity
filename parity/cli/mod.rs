@@ -53,10 +53,6 @@ usage! {
 
 			CMD cmd_account_new {
 				"Create a new acount",
-
-				ARG arg_account_new_password: (Option<String>) = None,
-				"--password=[FILE]",
-				"Path to the password file",
 			}
 
 			CMD cmd_account_list {
@@ -80,10 +76,6 @@ usage! {
 			CMD cmd_wallet_import
 			{
 				"Import wallet",
-
-				ARG arg_wallet_import_password: (Option<String>) = None,
-				"--password=[FILE]",
-				"Path to the password file",
 
 				ARG arg_wallet_import_path: (Option<String>) = None,
 				"<PATH>",
@@ -178,10 +170,6 @@ usage! {
 			CMD cmd_signer_sign
 			{
 				"Sign",
-
-				ARG arg_signer_sign_password: (Option<String>) = None,
-				"--password=[FILE]",
-				"Path to the password file",
 
 				ARG arg_signer_sign_id: (Option<usize>) = None,
 				"[ID]",
@@ -353,7 +341,6 @@ usage! {
 			ARG arg_password: (Vec<String>) = Vec::new(), or |c: &Config| otry!(c.account).password.clone(),
 			"--password=[FILE]...",
 			"Provide a file containing a password for unlocking an account. Leading and trailing whitespace is trimmed.",
-
 		["UI options"]
 			FLAG flag_force_ui: (bool) = false, or |c: &Config| otry!(c.ui).force.clone(),
 			"--force-ui",
@@ -1205,11 +1192,11 @@ mod tests {
 
 	#[test]
 	fn should_accept_any_argument_order() {
-		let args = Args::parse(&["parity", "--chain=dev", "account", "list"]);
-		assert!(args.is_ok());
+		let args = Args::parse(&["parity", "--chain=dev", "account", "list"]).unwrap();
+		assert_eq!(args.arg_chain, "dev");
 
-		let args = Args::parse(&["parity", "account", "list", "--chain=dev"]);
-		assert!(args.is_ok());
+		let args = Args::parse(&["parity", "account", "list", "--chain=dev"]).unwrap();
+		assert_eq!(args.arg_chain, "dev");
 	}
 
 	#[test]
@@ -1383,9 +1370,6 @@ mod tests {
 			arg_restore_file: None,
 			arg_tools_hash_file: None,
 
-			arg_account_new_password: None,
-			arg_signer_sign_password: None,
-			arg_wallet_import_password: None,
 			arg_signer_sign_id: None,
 			arg_signer_reject_id: None,
 			arg_dapp_path: None,
